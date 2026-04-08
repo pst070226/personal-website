@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人网站</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Playfair+Display:wght@400;600&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+  
+  <!-- Three.js for Particle Modeling -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  
+  <style>
+    /* ============================================
+       CSS 变量定义
+    ============================================ */
+    :root {
+      /* 建模区 - 机械化风格 */
+      --modeling-bg: #0a0a0f;
+      --modeling-bg-alt: #1a1a24;
+      --modeling-border: #2a2a3a;
+      --modeling-accent: #00d4ff;
+      --modeling-accent-alt: #00ffcc;
+      --modeling-glow: rgba(0, 212, 255, 0.5);
+      
+      /* 温暖区 - Morandi 风格 */
+      --warm-bg: #f5f0e8;
+      --warm-bg-alt: #ebe5db;
+      --warm-card: #ffffff;
+      --warm-accent: #e8a87c;
+      --warm-accent-alt: #c9a88a;
+      --warm-text: #5d4e3c;
+      --warm-soft: #d4c4b5;
+      --warm-green: #8fa88f;
+      
+      /* 间距 */
+      --spacing-xs: 8px;
+      --spacing-sm: 16px;
+      --spacing-md: 24px;
+      --spacing-lg: 32px;
+      --spacing-xl: 48px;
+      --spacing-xxl: 64px;
+      --spacing-xxxl: 96px;
+      
+      /* 字体 */
+      --font-tech: 'Orbitron', monospace;
+      --font-art: 'Playfair Display', serif;
+      --font-body: 'Noto Sans SC', sans-serif;
+      
+      /* 导航 */
+      --nav-height: 64px;
+    }
+    
+    /* ============================================
+       全局样式
+    ============================================ */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html {
+      scroll-behavior: smooth;
+    }
+    
+    body {
+      font-family: var(--font-body);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+    
+    /* 光标跟随动画 */
+    .cursor-follower {
+      position: fixed;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--modeling-accent);
+      pointer-events: none;
+      z-index: 9999;
+      mix-blend-mode: difference;
+      transition: transform 0.1s ease-out, width 0.3s, height 0.3s;
+      opacity: 0.8;
+    }
+    
+    .cursor-follower.active {
+      width: 40px;
+      height: 40px;
+      background: var(--warm-accent);
+    }
+    
+    /* ============================================
+       导航栏
+    ============================================ */
+    .navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-height);
+      background: rgba(10, 10, 15, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--modeling-border);
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 var(--spacing-lg);
+      transition: all 0.3s ease;
+    }
+    
+    .navbar.scrolled {
+      height: 56px;
+      background: rgba(10, 10, 15, 0.95);
+    }
+    
+    .navbar__logo {
+      font-family: var(--font-tech);
+      font-size: 1.5rem;
+      color: var(--modeling-accent);
+      text-shadow: 0 0 10px var(--modeling-glow);
+      letter-spacing: 0.1em;
+    }
+    
+    .navbar__menu {
+      display: flex;
+      gap: var(--spacing-lg);
+      list-style: none;
+    }
+    
+    .navbar__item a {
+      font-family: var(--font-tech);
+      font-size: 0.9rem;
+      color: var(--modeling-border);
+      text-decoration: none;
+      padding: var(--spacing-sm);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .navbar__item a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 0;
+      height: 2px;
+      background: var(--modeling-accent);
+      transition: all 0.3s ease;
+      transform: translateX(-50%);
+    }
+    
+    .navbar__item.active a,
+    .navbar__item a:hover {
+      color: var(--modeling-accent);
+    }
+    
+    .navbar__item.active a::after,
+    .navbar__item a:hover::after {
+      width: 100%;
+    }
+    
+    /* 移动端汉堡菜单 */
+    .navbar__toggle {
+      display: none;
+      width: 30px;
+      height: 20px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      position: relative;
+    }
+    
+    .navbar__toggle span {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: var(--modeling-accent);
+      transition: all 0.3s ease;
+    }
+    
+    .navbar__toggle span:nth-child(1) { top: 0; }
+    .navbar__toggle span:nth-child(2) { top: 50%; transform: translateY(-50%); }
+    .navbar__toggle span:nth-child(3) { bottom: 0; }
+    
+    .navbar__toggle.open span:nth-child(1) {
+      transform: rotate(45deg);
+      top: 50%;
+    }
+    
+    .navbar__toggle.open span:nth-child(2) {
+      opacity: 0;
+    }
+    
+    .navbar__toggle.open span:nth-child(3) {
+      transform: rotate(-45deg);
+      bottom: 50%;
+    }
+    
+    .navbar__mobile-menu {
+      display: none;
+      position: fixed;
+      top: var(--nav-height);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: var(--modeling-bg);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    .navbar__mobile-menu.open {
+      opacity: 1;
+    }
+    
+    .navbar__mobile-menu ul {
+      list-style: none;
+      padding: var(--spacing-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--spacing-md);
+    }
+    
+    .navbar__mobile-menu a {
+      font-family: var(--font-tech);
+      font-size: 1.5rem;
+      color: var(--modeling-accent);
+      text-decoration: none;
+      padding: var(--spacing-md);
+    }
+    
+    @media (max-width: 768px) {
+      .navbar__menu { display: none; }
+      .navbar__toggle { display: block; }
+      .navbar__mobile-menu { display: block; }
+    }
+    
+    /* ============================================
+       Hero 区域 - 粒子建模
+    ============================================ */
+    .hero {
+      height: 100vh;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      background: var(--modeling-bg);
+    }
+    
+    #particle-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    
+    .hero__content {
+      position: absolute;
+      bottom: 15%;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 10;
+    }
+    
+    .hero__title {
+      font-family: var(--font-tech);
+      font-size: 3rem;
+      color: var(--modeling-accent);
+      text-shadow: 0 0 20px var(--modeling-glow);
+      letter-spacing: 0.2em;
+      margin-bottom: var(--spacing-sm);
+    }
+    
+    .hero__subtitle {
+      font-family: var(--font-body);
+      font-size: 1.2rem;
+      color: var(--modeling-border);
+      opacity: 0.8;
+    }
+    
+    .hero__scroll-hint {
+      position: absolute;
+      bottom: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--modeling-accent);
+      animation: bounce 2s infinite;
+    }
+    
+    .hero__scroll-hint svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+    
+    .hero__scroll-hint span {
+      font-family: var(--font-tech);
+      font-size: 0.8rem;
+      margin-top: var(--spacing-xs);
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(10px); }
+    }
+    
+    /* ============================================
+       区域过渡
+    ============================================ */
+    .transition-zone {
+      height: 150px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .transition-zone--to-warm {
+      background: linear-gradient(
+        180deg,
+        var(--modeling-bg) 0%,
+        #1a1a1f 20%,
+        #2a2a30 40%,
+        #4a4a50 60%,
+        #8a8a90 80%,
+        var(--warm-bg) 100%
+      );
+    }
+    
+    .transition-zone--warm {
+      height: 50px;
+      background: linear-gradient(
+        180deg,
+        var(--warm-bg) 0%,
+        var(--warm-bg-alt) 100%
+      );
+    }
+    
+    /* ============================================
+       建模区
+    ============================================ */
+    .modeling-section {
+      background: var(--modeling-bg);
+      padding: var(--spacing-xxxl) var(--spacing-lg);
+      position: relative;
+    }
+    
+    /* 网格背景 */
+    .modeling-section::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+    }
+    
+    .modeling-section__container {
+      max-width: 1200px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+    
+    .section-header {
+      text-align: center;
+      margin-bottom: var(--spacing-xxl);
+    }
+    
+    .modeling-section__title {
+      font-family: var(--font-tech);
+      font-size: 2.5rem;
+      color: var(--modeling-accent);
+      text-shadow: 0 0 15px var(--modeling-glow);
+      letter-spacing: 0.15em;
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .modeling-section__subtitle {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--modeling-border);
+    }
+    
+    /* 图片网格 */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-lg);
+    }
+    
+    .image-card {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--modeling-border);
+      background: var(--modeling-bg-alt);
+      transition: all 0.4s ease;
+    }
+    
+    .image-card:hover {
+      border-color: var(--modeling-accent);
+      box-shadow: 
+        0 0 20px rgba(0, 212, 255, 0.3),
+        inset 0 0 30px rgba(0, 212, 255, 0.1);
+      transform: translateY(-8px) scale(1.02);
+    }
+    
+    .image-card__img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      display: block;
+      filter: grayscale(20%) contrast(1.1);
+      transition: filter 0.4s ease;
+      cursor: pointer;
+    }
+    
+    .image-card:hover .image-card__img {
+      filter: grayscale(0%) contrast(1.2);
+    }
+    
+    .image-card__overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--spacing-md);
+      background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(10, 10, 15, 0.9) 100%
+      );
+      transform: translateY(100%);
+      transition: transform 0.4s ease;
+      pointer-events: none;
+    }
+    
+    .image-card:hover .image-card__overlay {
+      transform: translateY(0);
+    }
+    
+    .image-card__title {
+      font-family: var(--font-tech);
+      font-size: 1rem;
+      color: var(--modeling-accent);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .image-card__desc {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: var(--modeling-border);
+    }
+    
+    /* ============================================
+       绘图区
+    ============================================ */
+    .drawing-section {
+      background: var(--warm-bg);
+      padding: var(--spacing-xxxl) var(--spacing-lg);
+    }
+    
+    .drawing-section__container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .drawing-section__title {
+      font-family: var(--font-art);
+      font-size: 2.5rem;
+      color: var(--warm-text);
+      margin-bottom: var(--spacing-md);
+      position: relative;
+    }
+    
+    .drawing-section__title::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      width: 60px;
+      height: 3px;
+      background: var(--warm-accent);
+      transform: translateX(-50%);
+    }
+    
+    .drawing-section__subtitle {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--warm-soft);
+    }
+    
+    .warm-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-lg);
+    }
+    
+    .warm-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--warm-card);
+      border-radius: 12px;
+      box-shadow: 
+        0 4px 6px rgba(93, 78, 60, 0.07),
+        0 10px 20px rgba(93, 78, 60, 0.05);
+      transition: all 0.4s ease;
+    }
+    
+    .warm-card:hover {
+      transform: translateY(-12px);
+      box-shadow: 
+        0 12px 20px rgba(93, 78, 60, 0.12),
+        0 24px 40px rgba(93, 78, 60, 0.08);
+    }
+    
+    .warm-card__img {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      display: block;
+      border-radius: 12px 12px 0 0;
+      cursor: pointer;
+    }
+    
+    .warm-card__content {
+      padding: var(--spacing-md);
+      pointer-events: none;
+    }
+    
+    .warm-card__title {
+      font-family: var(--font-art);
+      font-size: 1.2rem;
+      color: var(--warm-text);
+      margin-bottom: var(--spacing-xs);
+    }
+    
+    .warm-card__desc {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--warm-soft);
+    }
+    
+    /* ============================================
+       宠物区
+    ============================================ */
+    .pets-section {
+      background: var(--warm-bg-alt);
+      padding: var(--spacing-xxxl) var(--spacing-lg);
+    }
+    
+    .pets-section__container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .pets-section__title {
+      font-family: var(--font-art);
+      font-size: 2.5rem;
+      color: var(--warm-text);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .pets-section__subtitle {
+      font-family: var(--font-body);
+      font-size: 1rem;
+      color: var(--warm-soft);
+    }
+    
+    .pets-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--spacing-lg);
+    }
+    
+    .pet-card {
+      position: relative;
+      overflow: hidden;
+      background: var(--warm-card);
+      border-radius: 16px;
+      box-shadow: 
+        0 4px 8px rgba(93, 78, 60, 0.08),
+        0 12px 24px rgba(93, 78, 60, 0.06);
+      transition: all 0.4s ease;
+    }
+    
+    .pet-card:hover {
+      transform: translateY(-15px) rotate(2deg);
+      box-shadow: 
+        0 15px 30px rgba(93, 78, 60, 0.15),
+        0 30px 50px rgba(93, 78, 60, 0.1);
+    }
+    
+    .pet-card__img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      display: block;
+      border-radius: 16px;
+      cursor: pointer;
+    }
+    
+    .pet-card__overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: var(--spacing-md);
+      background: linear-gradient(
+        180deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.95) 50%
+      );
+      border-radius: 0 0 16px 16px;
+      pointer-events: none;
+    }
+    
+    .pet-card__name {
+      font-family: var(--font-art);
+      font-size: 1.3rem;
+      color: var(--warm-accent);
+    }
+    
+    /* ============================================
+       图片查看器 (Lightbox)
+    ============================================ */
+    .lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 10, 15, 0.95);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .lightbox.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .lightbox__image {
+      width: 100%;
+      max-width: 100vw;
+      height: auto;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 4px;
+      box-shadow: 0 0 40px rgba(0, 212, 255, 0.3);
+    }
+    
+    .lightbox__close {
+      position: fixed;
+      top: 20px;
+      right: 30px;
+      width: 50px;
+      height: 50px;
+      background: var(--modeling-bg-alt);
+      border: 2px solid var(--modeling-accent);
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s ease;
+      z-index: 2001;
+    }
+    
+    .lightbox__close:hover {
+      background: var(--modeling-accent);
+      transform: scale(1.1);
+    }
+    
+    .lightbox__close::before,
+    .lightbox__close::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 3px;
+      background: var(--modeling-accent);
+      transition: background 0.3s ease;
+    }
+    
+    .lightbox__close:hover::before,
+    .lightbox__close:hover::after {
+      background: var(--modeling-bg);
+    }
+    
+    .lightbox__close::before {
+      transform: rotate(45deg);
+    }
+    
+    .lightbox__close::after {
+      transform: rotate(-45deg);
+    }
+    
+    /* ============================================
+       页脚
+    ============================================ */
+    .footer {
+      background: var(--modeling-bg);
+      padding: var(--spacing-xxl) var(--spacing-lg);
+      text-align: center;
+      border-top: 1px solid var(--modeling-border);
+    }
+    
+    .footer__social {
+      display: flex;
+      justify-content: center;
+      gap: var(--spacing-lg);
+      margin-bottom: var(--spacing-md);
+    }
+    
+    .footer__social-link {
+      color: var(--modeling-accent);
+      font-family: var(--font-tech);
+      text-decoration: none;
+      padding: var(--spacing-sm);
+      border: 1px solid var(--modeling-border);
+      transition: all 0.3s ease;
+    }
+    
+    .footer__social-link:hover {
+      border-color: var(--modeling-accent);
+      box-shadow: 0 0 10px var(--modeling-glow);
+    }
+    
+    .footer__copyright {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: var(--modeling-border);
+    }
+    
+    /* ============================================
+       响应式设计
+    ============================================ */
+    @media (max-width: 1024px) {
+      .image-grid,
+      .warm-grid,
+      .pets-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    
+    @media (max-width: 768px) {
+      .image-grid,
+      .warm-grid,
+      .pets-grid {
+        grid-template-columns: 1fr;
+        gap: var(--spacing-md);
+      }
+      
+      .hero__title {
+        font-size: 2rem;
+      }
+      
+      .modeling-section__title,
+      .drawing-section__title,
+      .pets-section__title {
+        font-size: 1.8rem;
+      }
+      
+      .section-header {
+        margin-bottom: var(--spacing-xl);
+      }
+      
+      .modeling-section,
+      .drawing-section,
+      .pets-section {
+        padding: var(--spacing-xl) var(--spacing-md);
+      }
+    }
+    
+    /* ============================================
+       滚动动画
+    ============================================ */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <!-- 光标跟随 -->
+  <div class="cursor-follower" id="cursor"></div>
+  
+  <!-- 导航栏 -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar__logo">PERSONAL</div>
+    <ul class="navbar__menu">
+      <li class="navbar__item" data-section="modeling">
+        <a href="#modeling">建模区</a>
+      </li>
+      <li class="navbar__item" data-section="drawing">
+        <a href="#drawing">绘图区</a>
+      </li>
+      <li class="navbar__item" data-section="pets">
+        <a href="#pets">宠物区</a>
+      </li>
+    </ul>
+    <button class="navbar__toggle" id="nav-toggle">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </nav>
+  
+  <!-- 移动端菜单 -->
+  <div class="navbar__mobile-menu" id="mobile-menu">
+    <ul>
+      <li><a href="#modeling">建模区</a></li>
+      <li><a href="#drawing">绘图区</a></li>
+      <li><a href="#pets">宠物区</a></li>
+    </ul>
+  </div>
+  
+  <!-- Hero 区域 - 粒子建模 -->
+  <section class="hero" id="hero">
+    <div id="particle-container"></div>
+    
+    <div class="hero__content">
+      <h1 class="hero__title">欢迎来到我的世界</h1>
+      <p class="hero__subtitle">建模 · 绘图 · 生活</p>
+    </div>
+    <div class="hero__scroll-hint">
+      <svg viewBox="0 0 24 24"><path d="M12 4l-8 8h5v8h6v-8h5z"/></svg>
+      <span>SCROLL</span>
+    </div>
+  </section>
+  
+  <!-- 过渡区域 -->
+  <div class="transition-zone--to-warm"></div>
+  
+  <!-- 建模区 -->
+  <section class="modeling-section" id="modeling">
+    <div class="modeling-section__container">
+      <header class="section-header fade-in">
+        <h2 class="modeling-section__title">建模作品</h2>
+        <p class="modeling-section__subtitle">三维世界的冷峻美学 · 精确与创造的交响</p>
+      </header>
+      <div class="image-grid">
+        <div class="image-card fade-in">
+          <img class="image-card__img" src="images/modeling/t26.jpg" alt="T-26坦克" loading="lazy">
+          <div class="image-card__overlay">
+            <h3 class="image-card__title">T-26 坦克</h3>
+            <p class="image-card__desc">苏联轻型坦克 · 历史重现</p>
+          </div>
+        </div>
+        <div class="image-card fade-in">
+          <img class="image-card__img" src="images/modeling/t26轻坦.jpg" alt="T-26轻坦渲染" loading="lazy">
+          <div class="image-card__overlay">
+            <h3 class="image-card__title">T-26 渲染</h3>
+            <p class="image-card__desc">光影艺术 · 细节呈现</p>
+          </div>
+        </div>
+        <div class="image-card fade-in">
+          <img class="image-card__img" src="images/modeling/2号J型.jpg" alt="二号J型坦克" loading="lazy">
+          <div class="image-card__overlay">
+            <h3 class="image-card__title">二号 J 型</h3>
+            <p class="image-card__desc">德国轻型坦克 · 精密建模</p>
+          </div>
+        </div>
+        <div class="image-card fade-in">
+          <img class="image-card__img" src="images/modeling/五式重战车.jpg" alt="五式重战车" loading="lazy">
+          <div class="image-card__overlay">
+            <h3 class="image-card__title">五式重战车</h3>
+            <p class="image-card__desc">日本重型战车 · 钢铁巨兽</p>
+          </div>
+        </div>
+        <div class="image-card fade-in">
+          <img class="image-card__img" src="images/modeling/斯太尔武器运载车.jpg" alt="斯太尔武器运载车" loading="lazy">
+          <div class="image-card__overlay">
+            <h3 class="image-card__title">斯太尔运载车</h3>
+            <p class="image-card__desc">武器运载平台 · 机械化美学</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- 过渡区域 -->
+  <div class="transition-zone--warm"></div>
+  
+  <!-- 绘图区 -->
+  <section class="drawing-section" id="drawing">
+    <div class="drawing-section__container">
+      <header class="section-header fade-in">
+        <h2 class="drawing-section__title">绘图作品</h2>
+        <p class="drawing-section__subtitle">色彩的温度 · 画笔下的故事</p>
+      </header>
+      <div class="warm-grid">
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/1.jpg" alt="绘图作品1" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品一</h3>
+            <p class="warm-card__desc">线条与光影的交织</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/2.jpg" alt="绘图作品2" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品二</h3>
+            <p class="warm-card__desc">色彩的对话</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/3.jpg" alt="绘图作品3" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品三</h3>
+            <p class="warm-card__desc">静默的表达</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/4.jpg" alt="绘图作品4" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品四</h3>
+            <p class="warm-card__desc">创意的边界</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/5.jpg" alt="绘图作品5" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品五</h3>
+            <p class="warm-card__desc">想象的世界</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/6.jpg" alt="绘图作品6" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品六</h3>
+            <p class="warm-card__desc">梦境边缘</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/7.jpg" alt="绘图作品7" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品七</h3>
+            <p class="warm-card__desc">心灵的映射</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/8.jpg" alt="绘图作品8" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品八</h3>
+            <p class="warm-card__desc">笔触的温度</p>
+          </div>
+        </div>
+        <div class="warm-card fade-in">
+          <img class="warm-card__img" src="images/drawing/9.jpg" alt="绘图作品9" loading="lazy">
+          <div class="warm-card__content">
+            <h3 class="warm-card__title">作品九</h3>
+            <p class="warm-card__desc">最后的篇章</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- 宠物区 -->
+  <section class="pets-section" id="pets">
+    <div class="pets-section__container">
+      <header class="section-header fade-in">
+        <h2 class="pets-section__title">我的宠物</h2>
+        <p class="pets-section__subtitle">陪伴是最长情的告白 · 每一个瞬间都值得记录</p>
+      </header>
+      <div class="pets-grid">
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/1.jpg" alt="宠物照片1" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">火焰丸</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/2.jpg" alt="宠物照片2" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">准备开花的白饺子皮</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/3.jpg" alt="宠物照片3" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">白眉</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/4.jpg" alt="宠物照片4" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">合影</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/5.jpg" alt="宠物照片5" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">史诗级会面</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/6.jpg" alt="宠物照片6" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">伊须罗玉</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/7.jpg" alt="宠物照片7" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">安静午后</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/8.jpg" alt="宠物照片8" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">寄居蟹群体</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/9.jpg" alt="宠物照片9" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">细节满满的黑丽丸</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/10.jpg" alt="宠物照片10" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">炸毛的赤羽丸</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/11.jpg" alt="宠物照片11" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">超级大肥猪</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/12.jpg" alt="宠物照片12" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">蛇蛇对你很好奇</h3>
+          </div>
+        </div>
+        <div class="pet-card fade-in">
+          <img class="pet-card__img" src="images/pets/13.jpg" alt="宠物照片13" loading="lazy">
+          <div class="pet-card__overlay">
+            <h3 class="pet-card__name">完美合影</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- 图片查看器 -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox__close" id="lightbox-close"></button>
+    <img class="lightbox__image" id="lightbox-image" src="" alt="高清大图">
+  </div>
+  
+  <!-- 页脚 -->
+  <footer class="footer">
+    <div class="footer__social">
+      <a href="https://github.com/pst070226" class="footer__social-link" target="_blank">GitHub</a>
+      <a href="#" class="footer__social-link">Email</a>
+      <a href="#" class="footer__social-link">WeChat</a>
+    </div>
+    <p class="footer__copyright">© 2024 Personal Website · Made with passion</p>
+  </footer>
+  
+  <script>
+    /* ============================================
+       光标跟随动画
+    ============================================ */
+    const cursor = document.getElementById('cursor');
+    let mouseX = 0, mouseY = 0;
+    let cursorX = 0, cursorY = 0;
+    
+    document.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+      
+      // 根据位置判断是否在温暖区域
+      const currentSection = getCurrentSection();
+      if (currentSection === 'drawing' || currentSection === 'pets') {
+        cursor.classList.add('active');
+      } else {
+        cursor.classList.remove('active');
+      }
+    });
+    
+    // 平滑跟随
+    function animateCursor() {
+      const dx = mouseX - cursorX;
+      const dy = mouseY - cursorY;
+      
+      cursorX += dx * 0.15;
+      cursorY += dy * 0.15;
+      
+      cursor.style.left = cursorX - 10 + 'px';
+      cursor.style.top = cursorY - 10 + 'px';
+      
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+    
+    /* ============================================
+       Three.js 粒子太阳系建模
+    ============================================ */
+    let scene, camera, renderer, particles, isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let rotationVelocity = { x: 0, y: 0 };
+    
+    function initParticleModel() {
+      const container = document.getElementById('particle-container');
+      
+      // 创建场景
+      scene = new THREE.Scene();
+      
+      // 创建相机
+      camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.z = 5;
+      
+      // 创建渲染器
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setClearColor(0x0a0a0f, 1);
+      container.appendChild(renderer.domElement);
+      
+      // 创建太阳系粒子
+      createSolarSystem();
+      
+      // 添加环境光
+      const ambientLight = new THREE.AmbientLight(0x00d4ff, 0.5);
+      scene.add(ambientLight);
+      
+      // 添加点光源
+      const pointLight = new THREE.PointLight(0x00ffcc, 1, 10);
+      pointLight.position.set(2, 2, 2);
+      scene.add(pointLight);
+      
+      // 鼠标拖动事件
+      renderer.domElement.addEventListener('mousedown', onMouseDown);
+      renderer.domElement.addEventListener('mousemove', onMouseMove);
+      renderer.domElement.addEventListener('mouseup', onMouseUp);
+      renderer.domElement.addEventListener('mouseleave', onMouseUp);
+      
+      // 触摸事件
+      renderer.domElement.addEventListener('touchstart', onTouchStart);
+      renderer.domElement.addEventListener('touchmove', onTouchMove);
+      renderer.domElement.addEventListener('touchend', onTouchEnd);
+      
+      // 窗口大小调整
+      window.addEventListener('resize', onWindowResize);
+      
+      // 开始动画循环
+      animate();
+    }
+    
+    function createSolarSystem() {
+      const particleCount = 4000;
+      const geometry = new THREE.BufferGeometry();
+      const positions = [];
+      const colors = [];
+      
+      // 太阳系参数
+      const sunRadius = 0.8;
+      const planets = [
+        { name: 'Mercury', radius: 0.08, orbit: 1.5, color: [0.7, 0.7, 0.7], particles: 80 },
+        { name: 'Venus', radius: 0.12, orbit: 2.0, color: [0.9, 0.7, 0.4], particles: 120 },
+        { name: 'Earth', radius: 0.13, orbit: 2.5, color: [0.2, 0.5, 0.9], particles: 150 },
+        { name: 'Mars', radius: 0.10, orbit: 3.0, color: [0.9, 0.4, 0.2], particles: 100 },
+        { name: 'Jupiter', radius: 0.35, orbit: 4.0, color: [0.8, 0.6, 0.4], particles: 400 },
+        { name: 'Saturn', radius: 0.30, orbit: 5.0, color: [0.9, 0.8, 0.6], particles: 350 },
+        { name: 'Uranus', radius: 0.20, orbit: 5.8, color: [0.5, 0.8, 0.9], particles: 200 },
+        { name: 'Neptune', radius: 0.18, orbit: 6.5, color: [0.3, 0.4, 0.8], particles: 180 }
+      ];
+      
+      // 1. 创建太阳（发光核心）
+      for (let i = 0; i < particleCount * 0.15; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const r = sunRadius * Math.pow(Math.random(), 0.5);
+        
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+        
+        positions.push(x, y, z);
+        
+        const intensity = 1 - r / sunRadius;
+        colors.push(1, 0.9 - intensity * 0.3, 0.2 + intensity * 0.3);
+      }
+      
+      // 2. 创建太阳光晕效果
+      for (let i = 0; i < particleCount * 0.05; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const r = sunRadius * 1.3 + Math.random() * 0.5;
+        
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+        
+        positions.push(x, y, z);
+        colors.push(1, 0.8, 0.4);
+      }
+      
+      // 3. 创建行星
+      for (const planet of planets) {
+        for (let i = 0; i < planet.particles; i++) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.random() * Math.PI;
+          const r = planet.radius * Math.pow(Math.random(), 0.3);
+          
+          const x = r * Math.sin(phi) * Math.cos(theta);
+          const y = r * Math.sin(phi) * Math.sin(theta);
+          const z = r * Math.cos(phi);
+          
+          const orbitAngle = Math.random() * Math.PI * 2;
+          const orbitX = planet.orbit * Math.cos(orbitAngle);
+          const orbitZ = planet.orbit * Math.sin(orbitAngle);
+          
+          positions.push(x + orbitX, y, z + orbitZ);
+          colors.push(planet.color[0], planet.color[1], planet.color[2]);
+        }
+      }
+      
+      // 4. 创建轨道环
+      for (const planet of planets) {
+        const orbitParticles = 60;
+        for (let i = 0; i < orbitParticles; i++) {
+          const angle = (i / orbitParticles) * Math.PI * 2;
+          const x = planet.orbit * Math.cos(angle);
+          const z = planet.orbit * Math.sin(angle);
+          
+          positions.push(x, 0, z);
+          colors.push(0.2, 0.3, 0.4);
+        }
+      }
+      
+      // 5. 创建背景星空
+      const starCount = particleCount * 0.1;
+      for (let i = 0; i < starCount; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.random() * Math.PI;
+        const r = 8 + Math.random() * 3;
+        
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+        
+        positions.push(x, y, z);
+        
+        const brightness = 0.5 + Math.random() * 0.5;
+        colors.push(brightness, brightness, brightness * (0.9 + Math.random() * 0.2));
+      }
+      
+      // 6. 土星环
+      const ringParticles = 200;
+      for (let i = 0; i < ringParticles; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const ringRadius = planets[5].radius * 1.5 + Math.random() * 0.3;
+        const yOffset = (Math.random() - 0.5) * 0.05;
+        
+        const orbitAngle = Math.random() * Math.PI * 2;
+        const orbitX = planets[5].orbit * Math.cos(orbitAngle);
+        const orbitZ = planets[5].orbit * Math.sin(orbitAngle);
+        
+        const x = ringRadius * Math.cos(angle) + orbitX;
+        const y = yOffset + (Math.random() - 0.5) * 0.02;
+        const z = ringRadius * Math.sin(angle) + orbitZ;
+        
+        positions.push(x, y, z);
+        colors.push(0.85, 0.75, 0.6);
+      }
+      
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      
+      const material = new THREE.PointsMaterial({
+        size: 0.04,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        sizeAttenuation: true
+      });
+      
+      particles = new THREE.Points(geometry, material);
+      scene.add(particles);
+    }
+    
+    function onMouseDown(event) {
+      isDragging = true;
+      previousMousePosition = {
+        x: event.clientX,
+        y: event.clientY
+      };
+      cursor.style.opacity = '0';
+    }
+    
+    function onMouseMove(event) {
+      if (!isDragging) return;
+      
+      const deltaMove = {
+        x: event.clientX - previousMousePosition.x,
+        y: event.clientY - previousMousePosition.y
+      };
+      
+      rotationVelocity.x = deltaMove.y * 0.005;
+      rotationVelocity.y = deltaMove.x * 0.005;
+      
+      particles.rotation.x += rotationVelocity.x;
+      particles.rotation.y += rotationVelocity.y;
+      
+      previousMousePosition = {
+        x: event.clientX,
+        y: event.clientY
+      };
+    }
+    
+    function onMouseUp() {
+      isDragging = false;
+      cursor.style.opacity = '0.8';
+    }
+    
+    function onTouchStart(event) {
+      if (event.touches.length === 1) {
+        isDragging = true;
+        previousMousePosition = {
+          x: event.touches[0].clientX,
+          y: event.touches[0].clientY
+        };
+      }
+    }
+    
+    function onTouchMove(event) {
+      if (!isDragging || event.touches.length !== 1) return;
+      
+      const deltaMove = {
+        x: event.touches[0].clientX - previousMousePosition.x,
+        y: event.touches[0].clientY - previousMousePosition.y
+      };
+      
+      rotationVelocity.x = deltaMove.y * 0.005;
+      rotationVelocity.y = deltaMove.x * 0.005;
+      
+      particles.rotation.x += rotationVelocity.x;
+      particles.rotation.y += rotationVelocity.y;
+      
+      previousMousePosition = {
+        x: event.touches[0].clientX,
+        y: event.touches[0].clientY
+      };
+    }
+    
+    function onTouchEnd() {
+      isDragging = false;
+    }
+    
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      
+      if (!isDragging) {
+        particles.rotation.x += rotationVelocity.x;
+        particles.rotation.y += rotationVelocity.y;
+        
+        rotationVelocity.x *= 0.95;
+        rotationVelocity.y *= 0.95;
+        
+        particles.rotation.y += 0.002;
+      }
+      
+      const time = Date.now() * 0.001;
+      particles.material.size = 0.05 + Math.sin(time) * 0.01;
+      
+      renderer.render(scene, camera);
+    }
+    
+    initParticleModel();
+    
+    /* ============================================
+       导航栏滚动效果
+    ============================================ */
+    const navbar = document.getElementById('navbar');
+    const navItems = document.querySelectorAll('.navbar__item');
+    const sections = ['modeling', 'drawing', 'pets'];
+    
+    function getCurrentSection() {
+      const scrollY = window.scrollY;
+      const windowHeight = window.innerHeight;
+      
+      for (const sectionId of sections) {
+        const section = document.getElementById(sectionId);
+        if (section) {
+          const rect = section.getBoundingClientRect();
+          if (rect.top <= windowHeight / 2 && rect.bottom >= windowHeight / 2) {
+            return sectionId;
+          }
+        }
+      }
+      return 'hero';
+    }
+    
+    function updateNavigation() {
+      if (window.scrollY > 50) {
+        navbar.classList.add('scrolled');
+      } else {
+        navbar.classList.remove('scrolled');
+      }
+      
+      const currentSection = getCurrentSection();
+      navItems.forEach(item => {
+        if (item.dataset.section === currentSection) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+    }
+    
+    window.addEventListener('scroll', updateNavigation);
+    
+    /* ============================================
+       移动端菜单
+    ============================================ */
+    const navToggle = document.getElementById('nav-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    
+    navToggle.addEventListener('click', () => {
+      navToggle.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
+    });
+    
+    mobileMenu.querySelectorAll('a').forEach(link => {
+      link.addEventListener('click', () => {
+        navToggle.classList.remove('open');
+        mobileMenu.classList.remove('open');
+      });
+    });
+    
+    /* ============================================
+       滚动动画 - 元素淡入
+    ============================================ */
+    const fadeElements = document.querySelectorAll('.fade-in');
+    
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.1
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+        }
+      });
+    }, observerOptions);
+    
+    fadeElements.forEach(el => observer.observe(el));
+    
+    /* ============================================
+       图片加载错误处理
+    ============================================ */
+    document.querySelectorAll('img').forEach(img => {
+      img.addEventListener('error', function() {
+        this.src = 'data:image/svg+xml,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+            <rect fill="#2a2a3a" width="400" height="300"/>
+            <text fill="#00d4ff" font-family="sans-serif" font-size="20" x="50%" y="50%" text-anchor="middle">
+              图片加载失败
+            </text>
+          </svg>
+        `);
+        this.alt = '图片无法加载';
+      });
+    });
+    
+    /* ============================================
+       图片查看器 (Lightbox) 功能
+    ============================================ */
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const lightboxClose = document.getElementById('lightbox-close');
+    
+    document.querySelectorAll('.image-card__img, .warm-card__img, .pet-card__img').forEach(img => {
+      img.addEventListener('click', function() {
+        const originalSrc = this.src;
+        lightboxImage.src = originalSrc;
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      });
+    });
+    
+    lightboxClose.addEventListener('click', closeLightbox);
+    
+    lightbox.addEventListener('click', function(e) {
+      if (e.target === lightbox) {
+        closeLightbox();
+      }
+    });
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+        closeLightbox();
+      }
+    });
+    
+    function closeLightbox() {
+      lightbox.classList.remove('active');
+      document.body.style.overflow = '';
+      lightboxImage.src = '';
+    }
+  </script>
+</body>
+</html>
