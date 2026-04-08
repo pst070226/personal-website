@@ -71,6 +71,12 @@
       font-family: var(--font-body);
       line-height: 1.6;
       overflow-x: hidden;
+      cursor: none;
+    }
+    
+    /* 隐藏所有元素的默认光标 */
+    * {
+      cursor: none !important;
     }
     
     /* 光标跟随动画 */
@@ -1083,7 +1089,7 @@
       <a href="#" class="footer__social-link">Email</a>
       <a href="#" class="footer__social-link">WeChat</a>
     </div>
-    <p class="footer__copyright">© 2024 Personal Website · Made with passion</p>
+    <p class="footer__copyright">© 2026 Personal Website · Made with passion</p>
   </footer>
   
   <script>
@@ -1395,6 +1401,13 @@
         
         particles.rotation.y += 0.002;
       }
+      
+      // 行星跟随光标
+      const targetX = (mouseX / window.innerWidth) * 2 - 1;
+      const targetY = -(mouseY / window.innerHeight) * 2 + 1;
+      
+      particles.position.x += (targetX * 2 - particles.position.x) * 0.02;
+      particles.position.y += (targetY * 1.5 - particles.position.y) * 0.02;
       
       const time = Date.now() * 0.001;
       particles.material.size = 0.05 + Math.sin(time) * 0.01;
