@@ -1390,8 +1390,25 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
     
-    function animate() {
+    // 帧率限制到30fps
+    let lastFrameTime = 0;
+    const targetFPS = 30;
+    const frameInterval = 1000 / targetFPS;
+    
+    function animate(currentTime) {
       requestAnimationFrame(animate);
+      
+      // 帧率控制
+      const elapsed = currentTime - lastFrameTime;
+      if (elapsed < frameInterval) return;
+      lastFrameTime = currentTime - (elapsed % frameInterval);
+      
+      // 仅当Hero区域可见时才渲染
+      const heroSection = document.getElementById('hero');
+      const heroRect = heroSection.getBoundingClientRect();
+      if (heroRect.bottom < 0 || heroRect.top > window.innerHeight) {
+        return;
+      }
       
       if (!isDragging) {
         particles.rotation.x += rotationVelocity.x;
@@ -1514,6 +1531,28 @@
         `);
         this.alt = '图片无法加载';
       });
+    });
+    
+    /* ============================================
+       高级懒加载 - 仅视口内加载
+    ============================================ */
+    const lazyImages = document.querySelectorAll('img[loading="lazy"]');
+    
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          // 图片已经在视口内，保持加载
+          observer.unobserve(img);
+        }
+      });
+    }, {
+      rootMargin: '100px', // 提前100px开始加载
+      threshold: 0
+    });
+    
+    lazyImages.forEach(img => {
+      imageObserver.observe(img);
     });
     
     /* ============================================
